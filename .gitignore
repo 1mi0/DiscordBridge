@@ -10,3 +10,6 @@ compile_commands.json
 # easier compile & run
 run.sh
 compile.sh
+
+# stuff the program generates
+client_to_channel.json

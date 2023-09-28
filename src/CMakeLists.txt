@@ -1,7 +1,5 @@
 add_executable(server)
 
-file(GLOB common_SOURCES "../common/*.cxx")
-file(GLOB bot_SOURCES "../bot/*.cxx")
 target_include_directories(server PRIVATE ..)
 target_include_directories(server PRIVATE ../common)
 

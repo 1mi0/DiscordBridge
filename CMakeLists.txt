@@ -13,7 +13,10 @@ if (DEBUG_ENABLED)
   set(COMPILE_OPTIONS ${COMPILE_OPTIONS} -g)
 endif ()
 
-add_subdirectory(fmt)
-add_subdirectory(DPP)
+file(GLOB common_SOURCES "common/*.cxx")
+file(GLOB bot_SOURCES "bot/*.cxx")
+
+add_subdirectory(dependencies/fmt)
+add_subdirectory(dependencies/DPP)
 #add_subdirectory(boost)
 add_subdirectory(src)
