@@ -1,0 +1,12 @@
+
+# for telescope:
+.ignore
+
+# cache stuff
+build/
+.cache/
+compile_commands.json
+
+# easier compile & run
+run.sh
+compile.sh
