@@ -24,6 +24,7 @@
 #include "dpp.h"
 
 #include "fmt/ranges.h"
+#include "fmt/core.h"
 
 using i8 = int8_t;
 using i16 = int16_t;

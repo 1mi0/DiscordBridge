@@ -32,7 +32,7 @@ auto BotCommand::SetCallable(
   command_callable_t &&callable) -> BotCommand&
 {
   callable_ = callable;
-  callable_is_set_ = true;
+  is_set_ = true;
 
   return *this;
 }
@@ -58,7 +58,7 @@ void BotCommand::Call(const dpp::slashcommand_t &event)
       }
 
       found = true;
-      if (current_cmd->callable_is_set_)
+      if (current_cmd->is_set_)
       {
         current_cmd->callable_(*current_cmd, event);
         return;
@@ -269,23 +269,8 @@ void BotChatSession::HandleListBoundCommand(
   {
     try
     {
-      auto it = command.settings->GetClientList(channel_id);
-
-      // TODO: format this properly using fmt
-      auto first = *it.begin();
-      std::string initial_value = fmt::format("`{}`", first);
-
-      auto accumulator = [](std::string accum, auto next) {
-        return fmt::format("{}, `{}`", std::move(accum), std::move(next));
-      };
-
-      std::string formatted = std::accumulate(
-        std::next(it.begin()),
-        it.end(),
-        initial_value,
-        accumulator);
-
-      event.reply(fmt::format("Clients bound to this channel: {}", formatted));
+      auto client_view = command.settings->GetClientList(channel_id);
+      event.reply(fmt::format("Clients bound to this channel: {}", client_view));
     }
     catch (std::exception& e)
     {
@@ -303,33 +288,31 @@ void BotChatSession::DeliverMessage(
     return;
   }
 
-  std::optional<std::string> content, author, client;
-  try
-  {
-    MessageParser parser(message);
-    content = parser.GetContent();
-    author = parser.GetAuthor();
-    client = parser.GetClient();
-  }
-  catch (std::exception &e)
-  {
-    Debug("DeliverMessage()", "error: {}", e.what());
-  }
-
-  if (!client.has_value() || !author.has_value() || !content.has_value())
+  MessageParser parser(message);
+  auto client_opt = parser.GetClient();
+  if (!client_opt.has_value())
   {
     return;
   }
 
-  std::string formatted_message = fmt::format(
-    "**[{}] {}**: {}",
-    client.value(),
-    author.value(),
-    content.value());
+  auto res = settings_->GetChannelList(client_opt.value());
+  if (res.empty())
+  {
+    return;
+  }
 
-  auto res = settings_->GetChannelList(client.value());
-  std::ranges::for_each(res, [this, &formatted_message](u64 channel) {
-    bot_.message_create({channel, formatted_message}, BindToLogger());
+  std::string formatted;
+  try
+  {
+    formatted = fmt::format("{}", parser);
+  }
+  catch (std::exception& e) {
+    Debug("DeliverMessage()", "error: {}", e.what());
+    return;
+  }
+
+  std::ranges::for_each(res, [this, &formatted](u64 channel) {
+    bot_.message_create({channel, formatted}, BindToLogger());
     Debug("DeliverMessage()", "Channel Found: {}", channel);
   });
 }

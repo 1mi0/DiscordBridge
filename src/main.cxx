@@ -26,7 +26,6 @@ i32 main()
 
   bridge::Server server(io_context, room->shared_from_this());
   server.Start();
-  global_logger.Print("main()", "Server Running Port: {}", PORT);
 
   return 0;
 }

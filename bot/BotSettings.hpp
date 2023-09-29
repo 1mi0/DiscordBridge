@@ -59,10 +59,11 @@ public:
       return detail::get_value_to_optional<u64>(elem.second, "channel");
     };
 
+    namespace views = std::ranges::views;
     return FilterChannels(value_array_opt.value().get(), client)
-           | std::ranges::views::transform(channel_to_opt_transformer)
-           | std::ranges::views::filter(opt_filter)
-           | std::ranges::views::transform(opt_transformer);
+           | views::transform(channel_to_opt_transformer)
+           | views::filter(opt_filter)
+           | views::transform(opt_transformer);
   }
 
   // Binds a client to a specific channel and flushes the clients
@@ -96,10 +97,11 @@ public:
     };
 
     // Please give me transform_if :pray:
+    namespace views = std::ranges::views;
     return FilterClients(value_array_opt.value().get(), channel)
-           | std::ranges::views::transform(client_to_opt_transformer)
-           | std::ranges::views::filter(opt_filter)
-           | std::ranges::views::transform(opt_transformer);
+           | views::transform(client_to_opt_transformer)
+           | views::filter(opt_filter)
+           | views::transform(opt_transformer);
   }
 
   // Unbinds a client from a channel

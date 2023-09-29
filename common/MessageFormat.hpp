@@ -41,4 +41,25 @@ public:
   };
 };
 
-}
+} // bridge
+
+template <>
+struct fmt::formatter<bridge::MessageParser>
+{
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+
+  auto format(const bridge::MessageParser& val, format_context& ctx)
+  {
+    return fmt::format_to(
+      ctx.out(),
+      "**[{}] {}**: {}",
+      val.GetClient().value(),
+      val.GetAuthor().value(),
+      val.GetContent().value());
+  }
+
+};

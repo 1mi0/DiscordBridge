@@ -6,9 +6,12 @@ void ChatRoom::DeliverMessage(
   const ChatRoomParticipantPtr &participant,
   const std::string &message)
 {
-  for (auto current_participant : participants_)
+  for (auto& current : participants_)
   {
-    current_participant->DeliverMessage(participant, message);
+    if (current != participant)
+    {
+      current->DeliverMessage(participant, message);
+    }
   }
 }
 

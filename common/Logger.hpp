@@ -14,7 +14,6 @@ struct logger_lock
 
 } // detail
 
-// TODO: extend fmt to work with more types
 template <
   char const* domain>
 class Logger

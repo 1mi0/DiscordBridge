@@ -158,6 +158,7 @@ void Server::Start()
     detached);
   Debug("Start()", "spawned deal_with_accepting");
 
+  Print("Start()", "Server Running on Port: {}", PORT);
   io_context_.run();
 }
 

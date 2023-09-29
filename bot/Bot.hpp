@@ -86,7 +86,7 @@ public:
 private:
   dpp::slashcommand command_;
   command_callable_t callable_;
-  bool callable_is_set_ = false;
+  bool is_set_ = false;
 
   [[nodiscard]] BotCommand(
     const BotSettingsPtr& settings,
