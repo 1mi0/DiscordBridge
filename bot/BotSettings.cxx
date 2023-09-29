@@ -6,43 +6,6 @@ BotSettings::BotSettings() { LoadClients(); }
 
 BotSettings::~BotSettings() { FlushAll(); }
 
-/*auto BotSettings::GetChannel(const std::string &client)
-  -> std::optional<dpp::snowflake>
-{
-  auto value_array =
-    detail::get_child_to_optional(client_to_channel_, "values");
-
-  if (!value_array.has_value())
-  {
-    return {};
-  }
-
-  u64 found = 0;
-  for (const auto &[key, value] : value_array.value().get())
-  {
-    auto current_client_opt =
-      detail::get_value_to_optional<std::string>(value, "client");
-
-    if (current_client_opt.has_value() &&
-        current_client_opt.value() == client)
-    {
-      auto channel_opt = detail::get_value_to_optional<u64>(value, "channel");
-      if (channel_opt.has_value())
-      {
-        found = channel_opt.value();
-        break;
-      }
-    }
-  }
-
-  if (found == 0)
-  {
-    return {};
-  }
-
-  return found;
-}*/
-
 auto BotSettings::BindClient(
   const std::string &client,
   dpp::snowflake channel) -> bool
@@ -72,7 +35,7 @@ auto BotSettings::BindClient(
     }
     catch (std::exception &e)
     {
-      Log("bind_client_to_channel()", "error: {}", e.what());
+      Debug("bind_client_to_channel()", "error: {}", e.what());
       // value not found is a normal thing, nothing really exceptional
     }
   }
@@ -123,7 +86,7 @@ auto BotSettings::CheckClientExists(
     std::ranges::find_if(value_array, detail::pair_finder(client, channel)) !=
     value_array.end();
 
-  Log("check_client_to_channel()", "found: {}", found);
+  Debug("check_client_to_channel()", "found: {}", found);
   return found;
 }
 
@@ -204,7 +167,7 @@ auto BotSettings::TreeToFile(
   }
   catch (std::exception &e)
   {
-    Log("tree_to_file()", "error: {}", e.what());
+    Debug("tree_to_file()", "error: {}", e.what());
     return false;
   }
 

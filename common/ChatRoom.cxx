@@ -15,13 +15,13 @@ void ChatRoom::DeliverMessage(
 void ChatRoom::Join(const ChatRoomParticipantPtr &participant)
 {
   participants_.insert(participant);
-  Log("Join()", "total: {}", participants_.size());
+  Debug("Join()", "total: {}", participants_.size());
 }
 
 void ChatRoom::Leave(const ChatRoomParticipantPtr &participant)
 {
   participants_.erase(participant);
-  Log("Leave()", "total: {}", participants_.size());
+  Debug("Leave()", "total: {}", participants_.size());
 }
 
 ThreadSafeChatRoom::ThreadSafeChatRoom(asio::io_context &io)
@@ -32,20 +32,20 @@ ThreadSafeChatRoom::ThreadSafeChatRoom(asio::io_context &io)
 
 void ThreadSafeChatRoom::Start()
 {
-  Log("Start()");
+  Debug("Start()");
 
   co_spawn(timer_.get_executor(), Delivery(), detached);
-  Log("Start()", "spawned delivery");
+  Debug("Start()", "spawned delivery");
 }
 
 awaitable<void> ThreadSafeChatRoom::Delivery()
 {
-  Log("Delivery()");
+  Debug("Delivery()");
   while (true)
   {
     try
     {
-      Log("Delivery()", "iteration start");
+      Debug("Delivery()", "iteration start");
 
       std::deque<message_> copied_msgs;
       {
@@ -54,7 +54,7 @@ awaitable<void> ThreadSafeChatRoom::Delivery()
         deliver_messages_.clear();
       }
 
-      Log("Delivery()", "copied msgs");
+      Debug("Delivery()", "copied msgs");
       while (!copied_msgs.empty())
       {
         DeliverMessageUnsafe(copied_msgs.front());
@@ -66,7 +66,7 @@ awaitable<void> ThreadSafeChatRoom::Delivery()
     }
     catch (std::exception &e)
     {
-      Log("Delivery()", "caught: {}", e.what());
+      Debug("Delivery()", "caught: {}", e.what());
     }
   }
 }
@@ -75,18 +75,18 @@ void ThreadSafeChatRoom::DeliverMessageSafe(
   const ChatRoomParticipantPtr &participant,
   const std::string &message)
 {
-  Log("DeliverMessageSafe()");
+  Debug("DeliverMessageSafe()");
   {
     boost::mutex::scoped_lock scoped_lock(mutex_);
     deliver_messages_.push_back({participant, message});
   }
 
   asio::post( timer_.get_executor(), [self = shared_from_this()] {
-    self->Log("asio::post");
+    self->Debug("asio::post");
 
     self->timer_.cancel_one();
   });
-  Log("DeliverMessageSafe()", "posted");
+  Debug("DeliverMessageSafe()", "posted");
 }
 
 void ThreadSafeChatRoom::DeliverMessageUnsafe(

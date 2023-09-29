@@ -16,5 +16,7 @@ target_link_libraries(server PRIVATE dpp)
 
 target_compile_options(server PRIVATE ${COMPILE_OPTIONS})
 
+target_compile_definitions(server PRIVATE ${COMPILE_DEFINITIONS})
+
 target_precompile_headers(server PRIVATE ../common/common.hpp)
 target_sources(server PRIVATE main.cxx ${common_SOURCES} ${bot_SOURCES})

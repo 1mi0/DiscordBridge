@@ -4,12 +4,15 @@
 
 # cache stuff
 build/
+build_release/
 .cache/
 compile_commands.json
 
 # easier compile & run
 run.sh
+run_release.sh
 compile.sh
+compile_release.sh
 
 # stuff the program generates
 client_to_channel.json

@@ -12,7 +12,6 @@
 i32 main()
 {
   accuire_envs();
-  global_logger.Log("main()", "Port: {}", PORT);
 
   asio::io_context io_context;
   auto room = std::make_shared<bridge::ThreadSafeChatRoom>(io_context);
@@ -23,10 +22,11 @@ i32 main()
   // also if you want to just turn it off and just have a simple ChatRoom, just
   // comment the 2 lines below :)
   std::make_shared<bridge::BotChatSession>(room->shared_from_this())->Start();
-  global_logger.Log("main()", "Bot started");
+  global_logger.Print("main()", "Bot Running");
 
   bridge::Server server(io_context, room->shared_from_this());
   server.Start();
+  global_logger.Print("main()", "Server Running Port: {}", PORT);
 
   return 0;
 }

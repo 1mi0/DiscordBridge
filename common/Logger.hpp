@@ -14,8 +14,6 @@ struct logger_lock
 
 } // detail
 
-// TODO: turn this off in production
-// maybe also rename to Debug and Log?
 // TODO: extend fmt to work with more types
 template <
   char const* domain>
@@ -23,10 +21,29 @@ class Logger
 {
 public:
   template <typename... T>
-  static void Log(
-    const std::string& current_domain,
-    fmt::format_string<T...> fmt,
-    T&&... args)
+  static void Debug(
+    [[maybe_unused]] const std::string& current_domain,
+    [[maybe_unused]] fmt::format_string<T...> fmt,
+    [[maybe_unused]] T&&... args)
+  {
+    #ifndef NDEBUG
+    Print(current_domain, fmt, std::forward<T>(args)...);
+    #endif //NDEBUG
+  }
+
+  static void Debug(
+    [[maybe_unused]] const std::string& current_domain)
+  {
+    #ifndef NDEBUG
+    Print(current_domain);
+    #endif // NDEBUG
+  }
+
+  template <typename... T>
+  static void Print(
+    [[maybe_unused]] const std::string& current_domain,
+    [[maybe_unused]] fmt::format_string<T...> fmt,
+    [[maybe_unused]] T&&... args)
   {
     const std::string result = fmt::format(
       "[LOG - {}::{}] {}",
@@ -34,13 +51,10 @@ public:
       current_domain,
       fmt::format(fmt, std::forward<T>(args)...));
 
-    {
-      boost::mutex::scoped_lock scoped_lock(detail::logger_lock::mutex);
-      fmt::println("{}", result);
-    }
+    LockedPrint(result);
   }
 
-  static void Log(
+  static void Print(
     const std::string& current_domain)
   {
     const std::string result = fmt::format(
@@ -48,10 +62,14 @@ public:
       domain,
       current_domain);
 
-    {
-      boost::mutex::scoped_lock scoped_lock(detail::logger_lock::mutex);
-      fmt::println("{}", result);
-    }
+    LockedPrint(result);
+  }
+
+private:
+  static void LockedPrint(const std::string& message)
+  {
+    boost::mutex::scoped_lock lock(detail::logger_lock::mutex);
+    fmt::println("{}", message);
   }
 };
 

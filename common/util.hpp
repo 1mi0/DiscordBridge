@@ -70,7 +70,7 @@ inline std::optional<T> get_value_to_optional(
   }
   catch(std::exception& e)
   {
-    global_logger.Log("get_value_to_optional()", "error: {}", e.what());
+    global_logger.Debug("get_value_to_optional()", "error: {}", e.what());
   }
   return {};
 }
@@ -87,7 +87,7 @@ get_child_to_optional(
   }
   catch(std::exception& e)
   {
-    global_logger.Log("get_child_to_optional()", "error: {}", e.what());
+    global_logger.Debug("get_child_to_optional()", "error: {}", e.what());
   }
   return {};
 }
@@ -104,7 +104,7 @@ pair_finder(const std::string& client, dpp::snowflake channel)
   return
     [=](const ptree::value_type& element)
     {
-      global_logger.Log(
+      global_logger.Debug(
         "pair_finder()::lambda",
         "client: {} channel: {}",
         client,

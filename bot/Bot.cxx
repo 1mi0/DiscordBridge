@@ -47,7 +47,7 @@ void BotCommand::Call(const dpp::slashcommand_t &event)
     [&command_name, &found, &event]
     (BotCommandPtr &current_cmd)
     {
-      Log(
+      Debug(
         "Call::command_finder()",
         "current_cmd: {} other_cmd: {}",
         current_cmd->command_.name, command_name);
@@ -81,19 +81,19 @@ BotChatSession::BotChatSession(
   : room_(room),
     bot_(TOKEN, dpp::i_default_intents | dpp::i_message_content)
 {
-  Log("Constructor", "Application ID: {}", static_cast<u64>(bot_.me.id));
+  Debug("Constructor", "Application ID: {}", static_cast<u64>(bot_.me.id));
 
   settings_ = std::make_shared<BotSettings>();
 
   bot_.on_message_create(
     detail::bind_event_to_this(&BotChatSession::OnMessageCreate, this));
-  Log("Constructor", "bound OnMessageCreate");
+  Debug("Constructor", "bound OnMessageCreate");
 
   bot_.on_slashcommand(
     detail::bind_event_to_this(&BotChatSession::OnSlashCommand, this));
 
   bot_.on_ready(detail::bind_event_to_this(&BotChatSession::OnReady, this));
-  Log("Constructor", "bound OnReady");
+  Debug("Constructor", "bound OnReady");
 }
 
 BotChatSession::~BotChatSession() { room_->LeaveUnsafe(shared_from_this()); }
@@ -101,7 +101,7 @@ BotChatSession::~BotChatSession() { room_->LeaveUnsafe(shared_from_this()); }
 void BotChatSession::Start()
 {
   bot_.start(dpp::st_return);
-  Log("Start()", "bot started");
+  Debug("Start()", "bot started");
 
   room_->JoinUnsafe(shared_from_this());
 }
@@ -115,7 +115,7 @@ void BotChatSession::OnMessageCreate(
     return;
   }
 
-  Log(
+  Debug(
     "OnMessageCreate()", "message: {}, channel: {}",
     event.msg.content,
     static_cast<u64>(event.msg.channel_id));
@@ -126,16 +126,16 @@ void BotChatSession::OnMessageCreate(
     "Discord"});
 
   room_->DeliverMessageSafe(shared_from_this(), formatted_msg);
-  Log("OnMessageCreate()", "delivered message");
+  Debug("OnMessageCreate()", "delivered message");
 }
 
 void BotChatSession::OnSlashCommand(const dpp::slashcommand_t &event)
 {
-  Log("OnSlashCommand()", "command: {}", event.command.get_command_name());
+  Debug("OnSlashCommand()", "command: {}", event.command.get_command_name());
 
   BotCommand::Call(event);
 
-  Log(
+  Debug(
     "OnSlashCommand()",
     "command processed: {}",
     event.command.get_command_name());
@@ -145,7 +145,7 @@ void BotChatSession::OnReady([[maybe_unused]] const dpp::ready_t &event)
 {
   if (dpp::run_once<struct register_global_commands>())
   {
-    Log("OnReady()");
+    Debug("OnReady()");
     try
     {
       dpp::slashcommand slashcmd = dpp::slashcommand
@@ -208,7 +208,7 @@ void BotChatSession::OnReady([[maybe_unused]] const dpp::ready_t &event)
     }
     catch (std::exception& e)
     {
-      Log("OnReady()", "error: {}", e.what());
+      Debug("OnReady()", "error: {}", e.what());
     }
   }
 }
@@ -217,7 +217,7 @@ void BotChatSession::HandleBindCommand(
   BotCommand& command,
   const dpp::slashcommand_t& event)
 {
-  Log("handle_bind_command()");
+  Debug("handle_bind_command()");
   if (dpp::snowflake channel_id = event.command.channel_id)
   {
     std::string client = std::get<std::string>(event.get_parameter("client"));
@@ -289,7 +289,7 @@ void BotChatSession::HandleListBoundCommand(
     }
     catch (std::exception& e)
     {
-      Log("HandleListBoundCommand()", "error: {}", e.what());
+      Debug("HandleListBoundCommand()", "error: {}", e.what());
     }
   }
 }
@@ -313,7 +313,7 @@ void BotChatSession::DeliverMessage(
   }
   catch (std::exception &e)
   {
-    Log("DeliverMessage()", "error: {}", e.what());
+    Debug("DeliverMessage()", "error: {}", e.what());
   }
 
   if (!client.has_value() || !author.has_value() || !content.has_value())
@@ -330,7 +330,7 @@ void BotChatSession::DeliverMessage(
   auto res = settings_->GetChannelList(client.value());
   std::ranges::for_each(res, [this, &formatted_message](u64 channel) {
     bot_.message_create({channel, formatted_message}, BindToLogger());
-    Log("DeliverMessage()", "Channel Found: {}", channel);
+    Debug("DeliverMessage()", "Channel Found: {}", channel);
   });
 }
 
@@ -346,7 +346,7 @@ auto BotChatSession::BindToLogger(
   {
     if (result.is_error())
     {
-      Log("BindToLogger()", "error: {}", result.get_error().message);
+      Debug("BindToLogger()", "error: {}", result.get_error().message);
       return;
     }
 
