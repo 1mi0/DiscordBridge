@@ -7,9 +7,6 @@
 namespace bridge
 {
 
-namespace beast = boost::beast;
-namespace asio = boost::asio;
-
 constexpr char CLIENTCHATSESSION_STR[] = "ClientChatSession";
 class ClientChatSession
   : public ChatRoomParticipant,

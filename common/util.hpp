@@ -8,91 +8,45 @@ namespace bridge
 namespace detail
 {
 
-using ptree = boost::property_tree::ptree;
+struct Failure {};
 
 template <typename T>
-concept IsPointer = std::is_pointer_v<T>;
-
-template <bool cancellable = false>
-struct Defer
-{
-  using Function_t = std::function<void(void)>;
-private:
-  Function_t fn_;
-public:
-  Defer(Function_t&& func)
-  {
-    fn_ = std::forward<decltype(func)>(func);
-  }
-
-  ~Defer()
-  {
-    fn_();
-  }
-};
-
-template <>
-struct Defer<true>
-{
-  using Function_t = std::function<void(void)>;
-private:
-  Function_t fn_;
-  bool cancelled_ = false;
-public:
-  Defer(Function_t&& func)
-  {
-    fn_ = std::forward<decltype(func)>(func);
-  }
-
-  ~Defer()
-  {
-    if (!cancelled_)
-    {
-      fn_();
-    }
-  }
-
-  void cancel()
-  {
-    cancelled_ = true;
-  }
-};
+using CheckedResult = outcome::checked<T, Failure>;
 
 template <typename T>
-inline std::optional<T> get_value_to_optional(
+inline CheckedResult<T> get_value_res(
   const ptree& tree,
   const std::string& key)
 {
   try
   {
-    T result = tree.get<T>(key);
-    return result;
+    return tree.get<T>(key);
   }
   catch(std::exception& e)
   {
-    global_logger.Debug("get_value_to_optional()", "error: {}", e.what());
+    global_logger.Debug("get_value_res()", "error: {}", e.what());
+    return outcome::failure(Failure {});
   }
-  return {};
 }
 
-inline std::optional<std::reference_wrapper<ptree>>
-get_child_to_optional(
+inline CheckedResult<std::reference_wrapper<ptree>>
+get_child_res(
   ptree& tree,
   const std::string& key)
 {
   try
   {
-    boost::property_tree::ptree& result = tree.get_child(key);
-    return {std::reference_wrapper(result)};
+    return {std::reference_wrapper(tree.get_child(key))};
   }
   catch(std::exception& e)
   {
-    global_logger.Debug("get_child_to_optional()", "error: {}", e.what());
+    global_logger.Debug("get_child_res()", "error: {}", e.what());
+    return outcome::failure(Failure {});
   }
-  return {};
 }
 
-inline auto bind_event_to_this(auto ptr, IsPointer auto self)
+inline auto bind_event_to_this(auto ptr, auto self)
+  requires std::is_pointer_v<decltype(self)>
 {
   using namespace boost::placeholders;
   return boost::bind(ptr, self, _1);
@@ -111,9 +65,9 @@ pair_finder(const std::string& client, dpp::snowflake channel)
         static_cast<u64>(channel));
 
       auto current_client =
-        detail::get_value_to_optional<std::string>(element.second, "client");
+        detail::get_value_res<std::string>(element.second, "client");
       auto current_channel =
-        detail::get_value_to_optional<u64>(element.second, "channel");
+        detail::get_value_res<u64>(element.second, "channel");
 
       if (current_client.has_value() && current_client.value() == client &&
           current_channel.has_value() && current_channel.value() == channel)

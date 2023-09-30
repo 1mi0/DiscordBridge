@@ -3,6 +3,9 @@
 #include "common/common.hpp"
 #include "common/MessageFormat.hpp"
 #include "common/util.hpp"
+#include <bits/ranges_util.h>
+#include <ranges>
+#include <variant>
 
 namespace bridge
 {
@@ -23,27 +26,40 @@ public:
   ~BotSettings();
 
 private:
-  static inline auto opt_filter = [](const auto &client_opt) {
-    return client_opt.has_value();
-  };
-
-  static inline auto opt_transformer = [](const auto &client_opt) {
-    return client_opt.value();
-  };
-
-  [[nodiscard]] auto FilterChannels(
-    ptree &value_array,
-    const std::string& client)
+  template <typename TData, typename TOther>
+    requires std::same_as<TData, std::string> || std::same_as<TData, u64>
+  static auto filter_data_and_unwrap(ptree& value_array, TData data)
   {
-    // This has to be in here because it has a deduced type
-    auto client_filter = [client](const ptree::value_type &element) {
-      auto client_opt =
-        detail::get_value_to_optional<std::string>(element.second, "client");
+    std::string checking_for, other;
 
-      return client_opt.has_value() && client_opt.value() == client;
+    if constexpr (std::same_as<TData, u64>)
+    {
+      checking_for = "channel";
+      other = "client";
+    }
+    else
+    {
+      checking_for = "client";
+      other = "channel";
+    }
+
+    auto data_filter = [checking_for, other, data](auto &pair) {
+      auto result = detail::get_value_res<TData>(pair.second, checking_for);
+      if (!result.has_value() || result.value() != data)
+      {
+        return false;
+      }
+      return detail::get_value_res<TOther>(pair.second, other).has_value();
     };
 
-    return value_array | std::ranges::views::filter(client_filter);
+    auto unwrap_transform = [other](auto &pair) {
+      return detail::get_value_res<TOther>(pair.second, other).value();
+    };
+
+    namespace stdviews = std::ranges::views;
+    return value_array
+           | stdviews::filter(data_filter)
+           | stdviews::transform(unwrap_transform);
   }
 
 public:
@@ -52,70 +68,30 @@ public:
   {
     // Why? Why is this a thing? Why do I have to supply the Predicate to get
     // the iterator type? Now I'm forced to use auto, and exceptions.
-    auto value_array_opt =
-      detail::get_child_to_optional(client_to_channel_, "values");
+    auto result =
+      detail::get_child_res(client_to_channel_, "values");
 
-    auto channel_to_opt_transformer = [](const auto &elem) {
-      return detail::get_value_to_optional<u64>(elem.second, "channel");
-    };
+    return filter_data_and_unwrap<std::string, u64>(result.value(), client);
+  }
 
-    namespace views = std::ranges::views;
-    return FilterChannels(value_array_opt.value().get(), client)
-           | views::transform(channel_to_opt_transformer)
-           | views::filter(opt_filter)
-           | views::transform(opt_transformer);
+  // Gets a list of all Clients bound to a specific Channel
+  [[nodiscard]] auto GetClientList(dpp::snowflake channel)
+  {
+    auto result =
+      detail::get_child_res(client_to_channel_, "values");
+
+    // Please give me transform_if :pray:
+    return filter_data_and_unwrap<u64, std::string>(
+      result.value(),
+      static_cast<u64>(channel));
   }
 
   // Binds a client to a specific channel and flushes the clients
   auto BindClient(const std::string &client, dpp::snowflake channel) -> bool;
 
-private:
-  [[nodiscard]] auto FilterClients(
-    ptree &value_array,
-    dpp::snowflake channel)
-  {
-    // This has to be in here because it has a deduced type
-    auto channel_filter = [channel](const ptree::value_type &element) {
-      auto channel_opt =
-        detail::get_value_to_optional<u64>(element.second, "channel");
-
-      return channel_opt.has_value() && channel_opt.value() == channel;
-    };
-
-    return value_array | std::ranges::views::filter(channel_filter);
-  }
-
-public:
-  // Gets a list of all Clients bound to a specific Channel
-  [[nodiscard]] auto GetClientList(dpp::snowflake channel)
-  {
-    auto value_array_opt =
-      detail::get_child_to_optional(client_to_channel_, "values");
-
-    auto client_to_opt_transformer = [](const auto &elem) {
-      return detail::get_value_to_optional<std::string>(elem.second, "client");
-    };
-
-    // Please give me transform_if :pray:
-    namespace views = std::ranges::views;
-    return FilterClients(value_array_opt.value().get(), channel)
-           | views::transform(client_to_opt_transformer)
-           | views::filter(opt_filter)
-           | views::transform(opt_transformer);
-  }
-
   // Unbinds a client from a channel
   auto UnbindClient(const std::string &client, dpp::snowflake channel) -> bool;
 
-private:
-  void PushClient(ptree &values_array, ptree &obj);
-
-  [[nodiscard]] auto CheckClientExists(
-    ptree &value_array,
-    const std::string &client,
-    dpp::snowflake channel) -> bool;
-
-public:
   // Loads guild specific settings
   auto LoadSettings(dpp::snowflake guild) -> bool;
 
@@ -125,13 +101,26 @@ public:
   auto LoadClients() -> bool;
 
 private:
+  // Flushes all the clients to the file
   void FlushClients();
 
+  // Flushes everything, including guild settings to the appropriate files
   void FlushAll();
 
-  [[nodiscard]] static auto TreeFromFile(const std::string &file_name)
-    -> std::optional<std::unique_ptr<ptree>>;
+  // Adds a client to the ptree provided
+  static void PushClient(ptree &value_array, ptree &obj);
 
+  // Checks whether a pair exists in the ptree provided
+  [[nodiscard]] static auto CheckClientExists(
+    ptree &value_array,
+    const std::string &client,
+    dpp::snowflake channel) -> bool;
+
+  // Loads a Tree from a File
+  [[nodiscard]] static auto TreeFromFile(const std::string &file_name)
+    -> outcome::checked<std::unique_ptr<ptree>, std::string>;
+
+  // Stores a Tree into a File
   static auto TreeToFile(const ptree &tree, const std::string &file_name) -> bool;
 };
 

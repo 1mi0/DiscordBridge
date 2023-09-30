@@ -20,6 +20,7 @@
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/algorithm/algorithm.hpp"
 #include "boost/algorithm/string/find.hpp"
+#include "boost/outcome.hpp"
 
 #include "dpp.h"
 
@@ -43,6 +44,11 @@ inline void accuire_envs()
   PORT = std::atoi(std::getenv("BRIDGE_PORT"));
   TOKEN = std::getenv("BRIDGE_BOT_TOKEN");
 }
+
+namespace beast = boost::beast;
+namespace asio = boost::asio;
+namespace outcome = BOOST_OUTCOME_V2_NAMESPACE;
+using ptree = boost::property_tree::ptree;
 
 #define COMMON_HEADER_
 #endif // COMMON_HEADER_

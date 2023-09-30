@@ -306,7 +306,8 @@ void BotChatSession::DeliverMessage(
   {
     formatted = fmt::format("{}", parser);
   }
-  catch (std::exception& e) {
+  catch (std::exception& e)
+  {
     Debug("DeliverMessage()", "error: {}", e.what());
     return;
   }

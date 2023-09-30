@@ -24,20 +24,22 @@ constexpr char MESSAGEPARSER_STR[] = "MessageParser";
 class MessageParser
   : private Logger<MESSAGEPARSER_STR>
 {
+  using outcome_type = detail::CheckedResult<std::string>;
+
   boost::property_tree::ptree tree_;
 public:
   MessageParser(const std::string &message);
 
-  std::function<std::optional<std::string>()> GetContent = [this]() {
-    return detail::get_value_to_optional<std::string>(tree_, "message");
+  std::function<outcome_type()> GetContent = [this]() {
+    return detail::get_value_res<std::string>(tree_, "message");
   };
 
-  std::function<std::optional<std::string>()> GetAuthor = [this]() {
-    return detail::get_value_to_optional<std::string>(tree_, "author");
+  std::function<outcome_type()> GetAuthor = [this]() {
+    return detail::get_value_res<std::string>(tree_, "author");
   };
 
-  std::function<std::optional<std::string>()> GetClient = [this]() {
-    return detail::get_value_to_optional<std::string>(tree_, "client");
+  std::function<outcome_type()> GetClient = [this]() {
+    return detail::get_value_res<std::string>(tree_, "client");
   };
 };
 

@@ -1,4 +1,5 @@
 #include "BotSettings.hpp"
+#include "Defer.hpp"
 
 using namespace bridge;
 
@@ -10,18 +11,18 @@ auto BotSettings::BindClient(
   const std::string &client,
   dpp::snowflake channel) -> bool
 {
-  detail::Defer<true> flush([this] { FlushClients(); });
+  Defer<true> flush([this] { FlushClients(); });
 
   ptree obj;
   obj.add("client", client);
   obj.add("channel", static_cast<u64>(channel));
 
-  auto value_array_opt =
-    detail::get_child_to_optional(client_to_channel_, "values");
+  auto result =
+    detail::get_child_res(client_to_channel_, "values");
 
-  if (value_array_opt.has_value())
+  if (result.has_value())
   {
-    auto &value_array = value_array_opt.value().get();
+    auto &value_array = result.value().get();
     try
     {
       if (CheckClientExists(value_array, client, channel))
@@ -51,17 +52,17 @@ auto BotSettings::UnbindClient(
   const std::string &client,
   dpp::snowflake channel) -> bool
 {
-  detail::Defer flush([this] { FlushClients(); });
+  Defer flush([this] { FlushClients(); });
 
-  auto value_array_opt =
-    detail::get_child_to_optional(client_to_channel_, "values");
+  auto result =
+    detail::get_child_res(client_to_channel_, "values");
 
-  if (!value_array_opt.has_value())
+  if (!result.has_value())
   {
     return false;
   }
 
-  auto &value_array = value_array_opt.value().get();
+  auto &value_array = result.value().get();
 
   // erase if is not allowed since value_array's iterators are constant
   auto found =
@@ -90,9 +91,9 @@ auto BotSettings::CheckClientExists(
   return found;
 }
 
-void BotSettings::PushClient(ptree &values_array, ptree &obj)
+void BotSettings::PushClient(ptree &value_array, ptree &obj)
 {
-  values_array.push_back(std::make_pair("", obj));
+  value_array.push_back(std::make_pair("", obj));
 }
 
 auto BotSettings::LoadSettings(dpp::snowflake guild) -> bool
@@ -142,14 +143,15 @@ void BotSettings::FlushAll()
 }
 
 auto BotSettings::TreeFromFile(
-  const std::string &file_name) -> std::optional<std::unique_ptr<ptree>>
+  const std::string &file_name) 
+  -> outcome::checked<std::unique_ptr<ptree>, std::string>
 {
   auto tree = std::make_unique<ptree>();
 
   std::ifstream stream(file_name);
   if (!stream.is_open())
   {
-    return {};
+    return outcome::failure("Stream didn't open!");
   }
 
   read_json(stream, *tree);

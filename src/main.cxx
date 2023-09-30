@@ -5,8 +5,6 @@
 #include "common/ChatRoom.hpp"
 #include "common/Server.hpp"
 #include "bot/Bot.hpp"
-#include "bot/BotSettings.hpp"
-#include "common/MessageFormat.hpp"
 
 
 i32 main()
