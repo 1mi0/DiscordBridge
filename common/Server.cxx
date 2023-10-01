@@ -19,7 +19,8 @@ ClientChatSession::ClientChatSession(
   timer_.expires_at(std::chrono::steady_clock::time_point::max());
 }
 
-ClientChatSession::~ClientChatSession() {
+ClientChatSession::~ClientChatSession()
+{
   Stop({beast::websocket::close_code::normal});
 }
 

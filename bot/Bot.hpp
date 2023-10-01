@@ -23,6 +23,12 @@ class BotChatSession final
   // this relation is used so the Command can register itself
   friend class BotCommand;
 
+  static auto BindToThis(auto ptr, auto self)
+    requires std::is_pointer_v<decltype(self)>
+  {
+    using namespace boost::placeholders;
+    return boost::bind(ptr, self, _1);
+  }
 public:
   [[nodiscard]] BotChatSession(
     const std::shared_ptr<ThreadSafeChatRoom> &room);
@@ -40,15 +46,15 @@ private:
   void OnReady([[maybe_unused]] const dpp::ready_t &event);
 
   void HandleBindCommand(
-    BotCommand& command,
+    const BotCommand& command,
     const dpp::slashcommand_t& event);
 
   void HandleUnbindCommand(
-    BotCommand& command,
+    const BotCommand& command,
     const dpp::slashcommand_t& event);
 
   void HandleListBoundCommand(
-    BotCommand& command,
+    const BotCommand& command,
     const dpp::slashcommand_t& event);
 
   void DeliverMessage(

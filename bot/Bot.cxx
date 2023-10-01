@@ -46,27 +46,27 @@ void BotCommand::Call(const dpp::slashcommand_t &event)
   auto command_finder =
     [&command_name, &found, &event]
     (BotCommandPtr &current_cmd)
+  {
+    Debug(
+      "Call::command_finder()",
+      "current_cmd: {} other_cmd: {}",
+      current_cmd->command_.name, command_name);
+
+    if (current_cmd->command_.name != command_name)
     {
-      Debug(
-        "Call::command_finder()",
-        "current_cmd: {} other_cmd: {}",
-        current_cmd->command_.name, command_name);
+      return;
+    }
 
-      if (current_cmd->command_.name != command_name)
-      {
-        return;
-      }
+    found = true;
+    if (current_cmd->is_set_)
+    {
+      current_cmd->callable_(*current_cmd, event);
+      return;
+    }
 
-      found = true;
-      if (current_cmd->is_set_)
-      {
-        current_cmd->callable_(*current_cmd, event);
-        return;
-      }
-
-      throw std::logic_error(
-        fmt::format("Callable is not set for: {}", current_cmd->command_.name));
-    };
+    throw std::logic_error(
+      fmt::format("Callable is not set for: {}", current_cmd->command_.name));
+  };
 
   std::ranges::for_each(commands_list_, command_finder);
 
@@ -86,13 +86,13 @@ BotChatSession::BotChatSession(
   settings_ = std::make_shared<BotSettings>();
 
   bot_.on_message_create(
-    detail::bind_event_to_this(&BotChatSession::OnMessageCreate, this));
+    BindToThis(&BotChatSession::OnMessageCreate, this));
   Debug("Constructor", "bound OnMessageCreate");
 
   bot_.on_slashcommand(
-    detail::bind_event_to_this(&BotChatSession::OnSlashCommand, this));
+    BindToThis(&BotChatSession::OnSlashCommand, this));
 
-  bot_.on_ready(detail::bind_event_to_this(&BotChatSession::OnReady, this));
+  bot_.on_ready(BindToThis(&BotChatSession::OnReady, this));
   Debug("Constructor", "bound OnReady");
 }
 
@@ -214,7 +214,7 @@ void BotChatSession::OnReady([[maybe_unused]] const dpp::ready_t &event)
 }
 
 void BotChatSession::HandleBindCommand(
-  BotCommand& command,
+  const BotCommand& command,
   const dpp::slashcommand_t& event)
 {
   Debug("handle_bind_command()");
@@ -238,7 +238,7 @@ void BotChatSession::HandleBindCommand(
 }
 
 void BotChatSession::HandleUnbindCommand(
-  BotCommand& command,
+  const BotCommand& command,
   const dpp::slashcommand_t& event)
 {
   if (dpp::snowflake channel_id = event.command.channel_id)
@@ -262,7 +262,7 @@ void BotChatSession::HandleUnbindCommand(
 }
 
 void BotChatSession::HandleListBoundCommand(
-  BotCommand& command,
+  const BotCommand& command,
   const dpp::slashcommand_t& event)
 {
   if (dpp::snowflake channel_id = event.command.channel_id)
@@ -289,14 +289,14 @@ void BotChatSession::DeliverMessage(
   }
 
   MessageParser parser(message);
-  auto client_opt = parser.GetClient();
-  if (!client_opt.has_value())
+  auto client_result = parser.GetClient();
+  if (!client_result.has_value())
   {
     return;
   }
 
-  auto res = settings_->GetChannelList(client_opt.value());
-  if (res.empty())
+  auto channels_view = settings_->GetChannelList(client_result.value());
+  if (channels_view.empty())
   {
     return;
   }
@@ -312,7 +312,7 @@ void BotChatSession::DeliverMessage(
     return;
   }
 
-  std::ranges::for_each(res, [this, &formatted](u64 channel) {
+  std::ranges::for_each(channels_view, [this, &formatted](u64 channel) {
     bot_.message_create({channel, formatted}, BindToLogger());
     Debug("DeliverMessage()", "Channel Found: {}", channel);
   });

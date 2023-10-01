@@ -39,7 +39,7 @@ using u64 = uint64_t;
 extern u16 PORT;
 extern char* TOKEN;
 
-inline void accuire_envs()
+inline void AccuireEnvs()
 {
   PORT = std::atoi(std::getenv("BRIDGE_PORT"));
   TOKEN = std::getenv("BRIDGE_BOT_TOKEN");

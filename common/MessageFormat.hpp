@@ -31,15 +31,15 @@ public:
   MessageParser(const std::string &message);
 
   std::function<outcome_type()> GetContent = [this]() {
-    return detail::get_value_res<std::string>(tree_, "message");
+    return detail::TreeGetValue<std::string>(tree_, "message");
   };
 
   std::function<outcome_type()> GetAuthor = [this]() {
-    return detail::get_value_res<std::string>(tree_, "author");
+    return detail::TreeGetValue<std::string>(tree_, "author");
   };
 
   std::function<outcome_type()> GetClient = [this]() {
-    return detail::get_value_res<std::string>(tree_, "client");
+    return detail::TreeGetValue<std::string>(tree_, "client");
   };
 };
 

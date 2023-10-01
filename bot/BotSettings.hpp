@@ -28,7 +28,7 @@ public:
 private:
   template <typename TData, typename TOther>
     requires std::same_as<TData, std::string> || std::same_as<TData, u64>
-  static auto filter_data_and_unwrap(ptree& value_array, TData data)
+  static auto FilterUnwrap(const ptree& value_array, TData data)
   {
     std::string checking_for, other;
 
@@ -44,16 +44,16 @@ private:
     }
 
     auto data_filter = [checking_for, other, data](auto &pair) {
-      auto result = detail::get_value_res<TData>(pair.second, checking_for);
+      auto result = detail::TreeGetValue<TData>(pair.second, checking_for);
       if (!result.has_value() || result.value() != data)
       {
         return false;
       }
-      return detail::get_value_res<TOther>(pair.second, other).has_value();
+      return detail::TreeGetValue<TOther>(pair.second, other).has_value();
     };
 
     auto unwrap_transform = [other](auto &pair) {
-      return detail::get_value_res<TOther>(pair.second, other).value();
+      return detail::TreeGetValue<TOther>(pair.second, other).value();
     };
 
     namespace stdviews = std::ranges::views;
@@ -69,19 +69,19 @@ public:
     // Why? Why is this a thing? Why do I have to supply the Predicate to get
     // the iterator type? Now I'm forced to use auto, and exceptions.
     auto result =
-      detail::get_child_res(client_to_channel_, "values");
+      detail::TreeGetChild(client_to_channel_, "values");
 
-    return filter_data_and_unwrap<std::string, u64>(result.value(), client);
+    return FilterUnwrap<std::string, u64>(result.value(), client);
   }
 
   // Gets a list of all Clients bound to a specific Channel
   [[nodiscard]] auto GetClientList(dpp::snowflake channel)
   {
     auto result =
-      detail::get_child_res(client_to_channel_, "values");
+      detail::TreeGetChild(client_to_channel_, "values");
 
     // Please give me transform_if :pray:
-    return filter_data_and_unwrap<u64, std::string>(
+    return FilterUnwrap<u64, std::string>(
       result.value(),
       static_cast<u64>(channel));
   }
@@ -108,13 +108,40 @@ private:
   void FlushAll();
 
   // Adds a client to the ptree provided
-  static void PushClient(ptree &value_array, ptree &obj);
+  static void PushClient(ptree &value_array, const ptree &obj);
 
   // Checks whether a pair exists in the ptree provided
   [[nodiscard]] static auto CheckClientExists(
-    ptree &value_array,
+    const ptree &value_array,
     const std::string &client,
     dpp::snowflake channel) -> bool;
+
+
+  static std::function<bool(const ptree::value_type&)>
+  PairFinder(const std::string& client, dpp::snowflake channel)
+  {
+    return
+      [=](const ptree::value_type& element)
+      {
+        global_logger.Debug(
+          "pair_finder()::lambda",
+          "client: {} channel: {}",
+          client,
+          static_cast<u64>(channel));
+
+        auto current_client =
+          detail::TreeGetValue<std::string>(element.second, "client");
+        auto current_channel =
+          detail::TreeGetValue<u64>(element.second, "channel");
+
+        if (current_client.has_value() && current_client.value() == client &&
+            current_channel.has_value() && current_channel.value() == channel)
+        {
+          return true;
+        }
+        return false;
+      };
+  }
 
   // Loads a Tree from a File
   [[nodiscard]] static auto TreeFromFile(const std::string &file_name)

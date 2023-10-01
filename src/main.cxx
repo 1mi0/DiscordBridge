@@ -9,7 +9,7 @@
 
 i32 main()
 {
-  accuire_envs();
+  AccuireEnvs();
 
   asio::io_context io_context;
   auto room = std::make_shared<bridge::ThreadSafeChatRoom>(io_context);

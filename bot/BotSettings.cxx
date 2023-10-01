@@ -18,7 +18,7 @@ auto BotSettings::BindClient(
   obj.add("channel", static_cast<u64>(channel));
 
   auto result =
-    detail::get_child_res(client_to_channel_, "values");
+    detail::TreeGetChild(client_to_channel_, "values");
 
   if (result.has_value())
   {
@@ -52,10 +52,8 @@ auto BotSettings::UnbindClient(
   const std::string &client,
   dpp::snowflake channel) -> bool
 {
-  Defer flush([this] { FlushClients(); });
-
   auto result =
-    detail::get_child_res(client_to_channel_, "values");
+    detail::TreeGetChild(client_to_channel_, "values");
 
   if (!result.has_value())
   {
@@ -66,7 +64,7 @@ auto BotSettings::UnbindClient(
 
   // erase if is not allowed since value_array's iterators are constant
   auto found =
-    std::ranges::find_if(value_array, detail::pair_finder(client, channel));
+    std::ranges::find_if(value_array, PairFinder(client, channel));
 
   if (found == value_array.end())
   {
@@ -74,24 +72,25 @@ auto BotSettings::UnbindClient(
   }
 
   value_array.erase(found);
+  FlushClients();
   return true;
 }
 
 auto BotSettings::CheckClientExists(
-  ptree &value_array,
+  const ptree &value_array,
   const std::string &client,
   dpp::snowflake channel) -> bool
 {
 
   bool found =
-    std::ranges::find_if(value_array, detail::pair_finder(client, channel)) !=
+    std::ranges::find_if(value_array, PairFinder(client, channel)) !=
     value_array.end();
 
   Debug("check_client_to_channel()", "found: {}", found);
   return found;
 }
 
-void BotSettings::PushClient(ptree &value_array, ptree &obj)
+void BotSettings::PushClient(ptree &value_array, const ptree &obj)
 {
   value_array.push_back(std::make_pair("", obj));
 }
