@@ -21,28 +21,7 @@ ClientChatSession::ClientChatSession(
 
 ClientChatSession::~ClientChatSession()
 {
-  Stop({beast::websocket::close_code::normal});
-}
-
-awaitable<void> ClientChatSession::Start()
-{
-  Debug("Start()");
-
-  room_->JoinUnsafe(shared_from_this());
-  Debug("Start()", "joined a room");
-
-  co_await socket_.async_accept(use_awaitable);
-  Debug("Start()", "websocket accepted");
-
-  co_spawn(
-      socket_.get_executor(),
-      [self = shared_from_this()] { return self->Reader(); }, detached);
-  Debug("Start()", "spawned receiver");
-
-  co_spawn(
-      socket_.get_executor(),
-      [self = shared_from_this()] { return self->Writer(); }, detached);
-  Debug("Start()", "spawned writer");
+  //Stop({beast::websocket::close_code::normal});
 }
 
 awaitable<void> ClientChatSession::Acceptor()
@@ -51,6 +30,18 @@ awaitable<void> ClientChatSession::Acceptor()
 
   co_await socket_.async_accept(use_awaitable);
   Debug("Acceptor()", "accepted");
+
+  room_->JoinUnsafe(shared_from_this());
+
+  co_spawn(
+      socket_.get_executor(),
+      [self = shared_from_this()] { return self->Reader(); }, detached);
+  Debug("Acceptor()", "spawned receiver");
+
+  co_spawn(
+      socket_.get_executor(),
+      [self = shared_from_this()] { return self->Writer(); }, detached);
+  Debug("Acceptor()", "spawned writer");
 }
 
 awaitable<void> ClientChatSession::Reader()
@@ -171,9 +162,17 @@ awaitable<void> Server::DealWithAccepting(tcp::acceptor acceptor)
   {
     Debug("DealWithAccepting()", "iteration start");
 
-    co_await std::make_shared<ClientChatSession>(
-      co_await acceptor.async_accept(use_awaitable),
-      room_)->Start();
+    auto tcp_socket = co_await acceptor.async_accept(use_awaitable);
+
+    std::shared_ptr<ClientChatSession> session =
+      std::make_shared<ClientChatSession>(
+        std::move(tcp_socket),
+        room_);
+
+    co_spawn(
+      io_context_,
+      [self = session] { return self->Acceptor(); },
+      detached);
     Debug("DealWithAccepting()", "started session");
   }
 }

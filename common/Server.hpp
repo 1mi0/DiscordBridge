@@ -27,11 +27,9 @@ public:
   ~ClientChatSession();
 
   // Schedule everything needed for this to operate
-  awaitable<void> Start();
-
-private:
   awaitable<void> Acceptor();
 
+private:
   awaitable<void> Reader();
 
   awaitable<void> Writer();
