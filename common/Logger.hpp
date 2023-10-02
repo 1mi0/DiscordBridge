@@ -26,7 +26,7 @@ public:
     [[maybe_unused]] T&&... args)
   {
     #ifndef NDEBUG
-    Print(current_domain, fmt, std::forward<T>(args)...);
+    PrintWithPrefix("DEBUG", current_domain, fmt, std::forward<T>(args)...);
     #endif //NDEBUG
   }
 
@@ -34,7 +34,7 @@ public:
     [[maybe_unused]] const std::string& current_domain)
   {
     #ifndef NDEBUG
-    Print(current_domain);
+    PrintWithPrefix("DEBUG", current_domain);
     #endif // NDEBUG
   }
 
@@ -44,8 +44,40 @@ public:
     [[maybe_unused]] fmt::format_string<T...> fmt,
     [[maybe_unused]] T&&... args)
   {
+    PrintWithPrefix("LOG", current_domain, fmt, std::forward<T>(args)...);
+  }
+
+  static void Print(
+    const std::string& current_domain)
+  {
+    PrintWithPrefix("LOG", current_domain);
+  }
+
+private:
+  template <typename... T>
+  static void PrintWithPrefix(
+    const std::string& print_type,
+    const std::string& current_domain)
+  {
     const std::string result = fmt::format(
-      "[LOG - {}::{}] {}",
+      "[{} - {}::{}]",
+      print_type,
+      domain,
+      current_domain);
+
+    LockedPrint(result);
+  }
+
+  template <typename... T>
+  static void PrintWithPrefix(
+    const std::string& print_type,
+    const std::string& current_domain,
+    fmt::format_string<T...> fmt,
+    T&&... args)
+  {
+    const std::string result = fmt::format(
+      "[{} - {}::{}] {}",
+      print_type,
       domain,
       current_domain,
       fmt::format(fmt, std::forward<T>(args)...));
@@ -53,18 +85,6 @@ public:
     LockedPrint(result);
   }
 
-  static void Print(
-    const std::string& current_domain)
-  {
-    const std::string result = fmt::format(
-      "[LOG - {}::{}]",
-      domain,
-      current_domain);
-
-    LockedPrint(result);
-  }
-
-private:
   static void LockedPrint(const std::string& message)
   {
     boost::mutex::scoped_lock lock(detail::logger_lock::mutex);
