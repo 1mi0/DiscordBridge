@@ -3,9 +3,6 @@
 #include "common/common.hpp"
 #include "common/MessageFormat.hpp"
 #include "common/util.hpp"
-#include <bits/ranges_util.h>
-#include <ranges>
-#include <variant>
 
 namespace bridge
 {
@@ -27,7 +24,8 @@ public:
 
 private:
   template <typename TData, typename TOther>
-    requires std::same_as<TData, std::string> || std::same_as<TData, u64>
+    requires (std::same_as<TData, std::string> && std::same_as<TOther, u64>) ||
+             (std::same_as<TData, u64> && std::same_as<TOther, std::string>)
   static auto FilterUnwrap(const ptree& value_array, TData data)
   {
     std::string checking_for, other;
@@ -116,9 +114,9 @@ private:
     const std::string &client,
     dpp::snowflake channel) -> bool;
 
-
-  static std::function<bool(const ptree::value_type&)>
+  static auto
   PairFinder(const std::string& client, dpp::snowflake channel)
+    -> std::function<bool(const ptree::value_type&)>
   {
     return
       [=](const ptree::value_type& element)
@@ -148,7 +146,8 @@ private:
     -> outcome::checked<std::unique_ptr<ptree>, std::string>;
 
   // Stores a Tree into a File
-  static auto TreeToFile(const ptree &tree, const std::string &file_name) -> bool;
+  static auto
+  TreeToFile(const ptree &tree, const std::string &file_name) -> bool;
 };
 
 using BotSettingsPtr = std::shared_ptr<BotSettings>;

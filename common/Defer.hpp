@@ -10,16 +10,16 @@ struct Defer
 {
   using Function_t = std::function<void(void)>;
 private:
-  Function_t fn_;
+  Function_t function_;
 public:
   Defer(Function_t&& func)
   {
-    fn_ = std::forward<decltype(func)>(func);
+    function_ = std::forward<decltype(func)>(func);
   }
 
   ~Defer()
   {
-    fn_();
+    function_();
   }
 };
 
@@ -28,23 +28,23 @@ struct Defer<true>
 {
   using Function_t = std::function<void(void)>;
 private:
-  Function_t fn_;
+  Function_t function_;
   bool cancelled_ = false;
 public:
   Defer(Function_t&& func)
   {
-    fn_ = std::forward<decltype(func)>(func);
+    function_ = std::forward<decltype(func)>(func);
   }
 
   ~Defer()
   {
     if (!cancelled_)
     {
-      fn_();
+      function_();
     }
   }
 
-  void cancel()
+  void Cancel()
   {
     cancelled_ = true;
   }

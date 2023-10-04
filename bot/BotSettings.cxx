@@ -27,7 +27,7 @@ auto BotSettings::BindClient(
     {
       if (CheckClientExists(value_array, client, channel))
       {
-        flush.cancel();
+        flush.Cancel();
         return false;
       }
 

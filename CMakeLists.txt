@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.25.1)
 
 project(discord_bridge_backend)
 
-find_package(Threads)
+find_package(Threads REQUIRED)
+
+find_package(Boost REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -20,5 +22,4 @@ file(GLOB bot_SOURCES "bot/*.cxx")
 
 add_subdirectory(dependencies/fmt)
 add_subdirectory(dependencies/DPP)
-#add_subdirectory(boost)
 add_subdirectory(src)

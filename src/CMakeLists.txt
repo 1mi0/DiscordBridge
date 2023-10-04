@@ -3,10 +3,9 @@ add_executable(server)
 target_include_directories(server PRIVATE ..)
 target_include_directories(server PRIVATE ../common)
 
-message("Includes: ${Boost_INCLUDE_DIR}")
+message("Includes: ${Boost_INCLUDE_DIRS}")
 message("Link libraries: ${Boost_LIBRARIES}")
-target_include_directories(server PRIVATE ${Boost_INCLUDE_DIR})
-#target_link_libraries(server PRIVATE ${Boost_LIBRARIES})
+target_include_directories(server PRIVATE ${Boost_INCLUDE_DIRS})
 
 target_include_directories(server PRIVATE ../fmt/include/)
 target_link_libraries(server PRIVATE fmt::fmt Threads::Threads)

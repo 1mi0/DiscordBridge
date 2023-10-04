@@ -106,7 +106,8 @@ public:
   static auto Create(
     BotChatSession& bot,
     const BotSettingsPtr& settings,
-    dpp::slashcommand&& command) -> BotCommandPtr;
+    dpp::slashcommand&& command)
+    -> BotCommandPtr;
 
   static void Call(const dpp::slashcommand_t &event);
 };

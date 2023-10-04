@@ -7,7 +7,7 @@
 #include "bot/Bot.hpp"
 
 
-i32 main()
+auto main() -> i32
 {
   AccuireEnvs();
 
