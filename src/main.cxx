@@ -13,7 +13,6 @@ auto main() -> i32
 
   asio::io_context io_context;
   auto room = std::make_shared<bridge::ThreadSafeChatRoom>(io_context);
-  room->Start();
 
   // make sure not to pass the bot to another thread, completely self contained
   // if thread safety is needed use asio::post with the io_context in this scope
@@ -23,7 +22,8 @@ auto main() -> i32
   global_logger.Print("main()", "Bot Running");
 
   bridge::Server server(io_context, room->shared_from_this());
-  server.Start();
+
+  io_context.run();
 
   return 0;
 }

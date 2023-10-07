@@ -7,6 +7,7 @@
 #include <map>
 #include <fstream>
 #include <ranges>
+#include <vector>
 
 #define BOOST_ASIO_HAS_CO_AWAIT
 #include "boost/bind/bind.hpp"

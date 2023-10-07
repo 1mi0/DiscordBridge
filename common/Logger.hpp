@@ -15,12 +15,13 @@ struct logger_lock
 } // detail
 
 template <
-  char const* domain>
+  char const* domain
+>
 class Logger
 {
 public:
   template <typename... T>
-  static void Debug(
+  inline static void Debug(
     [[maybe_unused]] const std::string& current_domain,
     [[maybe_unused]] fmt::format_string<T...> fmt,
     [[maybe_unused]] T&&... args)
@@ -30,7 +31,7 @@ public:
     #endif //NDEBUG
   }
 
-  static void Debug(
+  inline static void Debug(
     [[maybe_unused]] const std::string& current_domain)
   {
     #ifndef NDEBUG
@@ -39,7 +40,7 @@ public:
   }
 
   template <typename... T>
-  static void Print(
+  inline static void Print(
     [[maybe_unused]] const std::string& current_domain,
     [[maybe_unused]] fmt::format_string<T...> fmt,
     [[maybe_unused]] T&&... args)
@@ -47,7 +48,7 @@ public:
     PrintWithPrefix("LOG", current_domain, fmt, std::forward<T>(args)...);
   }
 
-  static void Print(
+  inline static void Print(
     const std::string& current_domain)
   {
     PrintWithPrefix("LOG", current_domain);

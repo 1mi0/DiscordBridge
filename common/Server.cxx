@@ -31,7 +31,7 @@ awaitable<void> ClientChatSession::Acceptor()
   co_await socket_.async_accept(use_awaitable);
   Debug("Acceptor()", "accepted");
 
-  room_->JoinUnsafe(shared_from_this());
+  room_->Join(shared_from_this());
 
   co_spawn(
       socket_.get_executor(),
@@ -59,7 +59,7 @@ awaitable<void> ClientChatSession::Reader()
       auto msg = beast::buffers_to_string(buffer.data());
       Debug("Reader()", "read async message: {}", msg);
 
-      room_->DeliverMessageSafe(shared_from_this(), msg);
+      room_->DeliverMessage(shared_from_this(), msg);
       Debug("Reader()", "delivering message");
 
       buffer.clear();
@@ -126,7 +126,7 @@ void ClientChatSession::Stop(
 {
   Debug("Stop()");
 
-  room_->LeaveUnsafe(shared_from_this());
+  room_->Leave(shared_from_this());
   socket_.close(reason);
   timer_.cancel();
 }
@@ -138,20 +138,14 @@ Server::Server(
     room_(room)
 {
   Debug("Constructor");
-}
-
-void Server::Start()
-{
-  Debug("Start()");
 
   co_spawn(
     io_context_,
     DealWithAccepting({io_context_, {tcp::v4(), PORT}}),
     detached);
-  Debug("Start()", "spawned deal_with_accepting");
+  Debug("Constructor", "spawned deal_with_accepting");
 
-  Print("Start()", "Server Running on Port: {}", PORT);
-  io_context_.run();
+  Print("Constructor", "Server Running on Port: {}", PORT);
 }
 
 awaitable<void> Server::DealWithAccepting(tcp::acceptor acceptor)

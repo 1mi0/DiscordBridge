@@ -56,9 +56,6 @@ public:
     asio::io_context &io,
     const std::shared_ptr<ThreadSafeChatRoom> &room);
 
-  // Schedule the acceptor
-  void Start();
-
 private:
   awaitable<void> DealWithAccepting(asio::ip::tcp::acceptor acceptor);
 };

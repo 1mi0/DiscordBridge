@@ -96,14 +96,14 @@ BotChatSession::BotChatSession(
   Debug("Constructor", "bound OnReady");
 }
 
-BotChatSession::~BotChatSession() { room_->LeaveUnsafe(shared_from_this()); }
+BotChatSession::~BotChatSession() { room_->Leave(shared_from_this()); }
 
 void BotChatSession::Start()
 {
   bot_.start(dpp::st_return);
   Debug("Start()", "bot started");
 
-  room_->JoinUnsafe(shared_from_this());
+  room_->Join(shared_from_this());
 }
 
 void BotChatSession::OnMessageCreate(
@@ -125,7 +125,7 @@ void BotChatSession::OnMessageCreate(
     event.msg.content,
     "Discord"});
 
-  room_->DeliverMessageSafe(shared_from_this(), formatted_msg);
+  room_->DeliverMessage(shared_from_this(), formatted_msg);
   Debug("OnMessageCreate()", "delivered message");
 }
 

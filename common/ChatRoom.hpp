@@ -33,17 +33,19 @@ class ChatRoom
   std::set<ChatRoomParticipantPtr> participants_;
 
 public:
-  void DeliverMessage(
+  virtual void DeliverMessage(
     const ChatRoomParticipantPtr &participant,
     const std::string &message);
 
-  void Join(const ChatRoomParticipantPtr &participant);
+  virtual ~ChatRoom() {}
 
-  void Leave(const ChatRoomParticipantPtr &participant);
+  virtual void Join(const ChatRoomParticipantPtr &participant);
+
+  virtual void Leave(const ChatRoomParticipantPtr &participant);
 };
 
 class ThreadSafeChatRoom
-  : protected ChatRoom,
+  : public ChatRoom,
     public std::enable_shared_from_this<ThreadSafeChatRoom>
 {
   struct message_
@@ -58,34 +60,23 @@ class ThreadSafeChatRoom
 public:
   [[nodiscard]] ThreadSafeChatRoom(asio::io_context &io);
 
-  // Spawn the delivery in the io_context
-  void Start();
-
 private:
   awaitable<void> Delivery();
 
 public:
   // Deliver a message from any thread
-  void DeliverMessageSafe(
+  void DeliverMessage(
     const ChatRoomParticipantPtr &participant,
-    const std::string &message);
-
-  // the unsafe versions should only be used from the thread that
-  // ThreadSafeChatRoom runs in
-  void DeliverMessageUnsafe(
-    const ChatRoomParticipantPtr &participant,
-    const std::string &message);
+    const std::string &message) override;
 
 private:
-  // Just an internal to the class method to deal with message_
+  // Just forwards ThreadSafeChatRoom::message_ to the ChatRoom baseclass
   void DeliverMessageUnsafe(const message_ &message);
 
 public:
-  // Join ONLY on the main thread
-  void JoinUnsafe(const ChatRoomParticipantPtr &participant);
+  void Join(const ChatRoomParticipantPtr &participant) override;
 
-  // Leave ONLY on the main thread
-  void LeaveUnsafe(const ChatRoomParticipantPtr &participant);
+  void Leave(const ChatRoomParticipantPtr &participant) override;
 };
 
 }

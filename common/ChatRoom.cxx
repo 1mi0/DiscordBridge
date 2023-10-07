@@ -1,4 +1,5 @@
 #include "ChatRoom.hpp"
+#include <mutex>
 
 using namespace bridge;
 
@@ -31,14 +32,8 @@ ThreadSafeChatRoom::ThreadSafeChatRoom(asio::io_context &io)
   : timer_(io)
 {
   timer_.expires_at(std::chrono::steady_clock::time_point::max());
-}
-
-void ThreadSafeChatRoom::Start()
-{
-  Debug("Start()");
 
   co_spawn(timer_.get_executor(), Delivery(), detached);
-  Debug("Start()", "spawned delivery");
 }
 
 awaitable<void> ThreadSafeChatRoom::Delivery()
@@ -74,7 +69,7 @@ awaitable<void> ThreadSafeChatRoom::Delivery()
   }
 }
 
-void ThreadSafeChatRoom::DeliverMessageSafe(
+void ThreadSafeChatRoom::DeliverMessage(
   const ChatRoomParticipantPtr &participant,
   const std::string &message)
 {
@@ -84,7 +79,7 @@ void ThreadSafeChatRoom::DeliverMessageSafe(
     deliver_messages_.push_back({participant, message});
   }
 
-  asio::post( timer_.get_executor(), [self = shared_from_this()] {
+  asio::post(timer_.get_executor(), [self = shared_from_this()] {
     self->Debug("asio::post");
 
     self->timer_.cancel_one();
@@ -92,27 +87,24 @@ void ThreadSafeChatRoom::DeliverMessageSafe(
   Debug("DeliverMessageSafe()", "posted");
 }
 
-void ThreadSafeChatRoom::DeliverMessageUnsafe(
-  const ChatRoomParticipantPtr &participant,
-  const std::string &message)
-{
-  this->DeliverMessage(participant, message);
-}
-
 void ThreadSafeChatRoom::DeliverMessageUnsafe(const message_ &message)
 {
-  this->DeliverMessage(message.participant, message.content);
+  ChatRoom::DeliverMessage(message.participant, message.content);
 }
 
-void ThreadSafeChatRoom::JoinUnsafe(
-  const ChatRoomParticipantPtr &participant)
+void ThreadSafeChatRoom::Join(const ChatRoomParticipantPtr &participant)
 {
-  this->Join(participant);
+  {
+    std::scoped_lock lock(mutex_);
+    ChatRoom::Join(participant);
+  }
 }
 
-void ThreadSafeChatRoom::LeaveUnsafe(
-  const ChatRoomParticipantPtr &participant)
+void ThreadSafeChatRoom::Leave(const ChatRoomParticipantPtr &participant)
 {
-  this->Leave(participant);
+  {
+    std::scoped_lock lock(mutex_);
+    ChatRoom::Leave(participant);
+  }
 }
 
